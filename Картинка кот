@@ -1,0 +1,49 @@
+Я делала код в нью пай гейм тринкет и по всей видимости он не может показывать координаты. Поэтому пока я вписала в код все кроме координат, а так все готово
+import pygame
+pygame.init()
+font = pygame.font.SysFont(None, 100)
+
+screen = pygame.display.set_mode((960, 768))
+pygame.display.set_caption("Горы из фигур")
+
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    screen.fill((85,68,0))
+    pygame.draw.rect(screen, (128,102,0), (0,0,0,0)) #пол
+    pygame.draw.rect(screen, (213,255,230), (0,0,0,0)) #рама окна
+    pygame.draw.rect(screen, (135,205,222), (0,0,0) #стекла, таких 4 но с разными координатами
+    pygame.draw.ellipse(screen, (200,113,55),  [(0,0),(0,0),(0,0)]) #туловище
+     pygame.draw.ellipse(screen, (200,113,55),  [(0,0),(0,0),(0,0) #хвост
+     pygame.draw.circle(screen, (200,113,55), (20pygame.draw.rect(screen, (), ( [(0,0),(0,0),(0,0)]))0,150), 50)#бедро
+          pygame.draw.ellipse(screen, (200,113,55),  [(0,0),(0,0),(0,0)]) #задняя лапа
+           pygame.draw.ellipse(screen, (200,113,55),  [(0,0),(0,0),(0,0)]) #передняя лапа1
+                   pygame.draw.ellipse(screen, (200,113,55), ( [(0,0),(0,0),(0,0)])) #передняя лапа2
+pygame.draw.circle(screen, (200,113,55), (20pygame.draw.rect(screen, (), [(0,0),(0,0),(0,0)] )0,150), 50)#голова
+pygame.draw.circle(screen, (136,170,0), (20pygame.draw.rect(screen, (),  [(0,0),(0,0),(0,0)]))0,150), 50)#радужка, 2
+ pygame.draw.ellipse(screen, (0,0,0),  [(0,0),(0,0),(0,0)]) #блик, таких 2
+ pygame.draw.polygon(screen, (200,113,55)), [(0,0),(0,0),(0,0)]) #ухо, 2
+  pygame.draw.polygon(screen, ((222,170,135)), [(0,0),(0,0),(0,0)]) # раковина уха, 2
+   pygame.draw.polygon(screen, ((222,170,135)), [(0,0),(0,0),(0,0)]) # нос
+   pygame.draw.circle(screen, (153,153,153), (20pygame.draw.rect(screen, (), [(0,0),(0,0),(0,0)] )0,150), 50)#клубок
+ pygame.draw.line(screen, (0,0,0), (50,50), (350,250), 5)# нитки клубка
+  smile_rect = pygame.Rect(130, 120, 140, 100)
+    pygame.draw.arc(screen, (0, 0, 0), smile_rect, 3.14, 2*3.14, 4)# две такие от носа под углом
+    pygame.draw.arc(screen, (0, 0, 0), smile_rect, 3.14, 2*3.14, 4)# усы, по три с каждой стороны
+    
+        
+     
+    pygame.display.flip()
+
+    mx, my = pygame.mouse.get_pos()
+    text = font.render(f"x: {mx}, y: {my}", True, (0, 0, 0))
+    screen.blit(text, (10, 10))
+
+
+  
+    
+
+pygame.quit()
