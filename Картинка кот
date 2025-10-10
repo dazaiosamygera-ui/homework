@@ -1,9 +1,9 @@
-Я делала код в нью пай гейм тринкет и по всей видимости он не может показывать координаты. Поэтому пока я вписала в код все кроме координат, а так все готово
+
 import pygame
 pygame.init()
 font = pygame.font.SysFont(None, 100)
 
-screen = pygame.display.set_mode((960, 768))
+screen = pygame.display.set_mode((640, 850))
 pygame.display.set_caption("Горы из фигур")
 
 running = True
@@ -12,38 +12,62 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    screen.fill((85,68,0))
-    pygame.draw.rect(screen, (128,102,0), (0,0,0,0)) #пол
-    pygame.draw.rect(screen, (213,255,230), (0,0,0,0)) #рама окна
-    pygame.draw.rect(screen, (135,205,222), (0,0,0) #стекла, таких 4 но с разными координатами
-    pygame.draw.ellipse(screen, (200,113,55),  [(0,0),(0,0),(0,0)]) #туловище
-     pygame.draw.ellipse(screen, (200,113,55),  [(0,0),(0,0),(0,0) #хвост
-     pygame.draw.circle(screen, (200,113,55), (20pygame.draw.rect(screen, (), ( [(0,0),(0,0),(0,0)]))0,150), 50)#бедро
-          pygame.draw.ellipse(screen, (200,113,55),  [(0,0),(0,0),(0,0)]) #задняя лапа
-           pygame.draw.ellipse(screen, (200,113,55),  [(0,0),(0,0),(0,0)]) #передняя лапа1
-                   pygame.draw.ellipse(screen, (200,113,55), ( [(0,0),(0,0),(0,0)])) #передняя лапа2
-pygame.draw.circle(screen, (200,113,55), (20pygame.draw.rect(screen, (), [(0,0),(0,0),(0,0)] )0,150), 50)#голова
-pygame.draw.circle(screen, (136,170,0), (20pygame.draw.rect(screen, (),  [(0,0),(0,0),(0,0)]))0,150), 50)#радужка, 2
- pygame.draw.ellipse(screen, (0,0,0),  [(0,0),(0,0),(0,0)]) #блик, таких 2
- pygame.draw.polygon(screen, (200,113,55)), [(0,0),(0,0),(0,0)]) #ухо, 2
-  pygame.draw.polygon(screen, ((222,170,135)), [(0,0),(0,0),(0,0)]) # раковина уха, 2
-   pygame.draw.polygon(screen, ((222,170,135)), [(0,0),(0,0),(0,0)]) # нос
-   pygame.draw.circle(screen, (153,153,153), (20pygame.draw.rect(screen, (), [(0,0),(0,0),(0,0)] )0,150), 50)#клубок
- pygame.draw.line(screen, (0,0,0), (50,50), (350,250), 5)# нитки клубка
-  smile_rect = pygame.Rect(130, 120, 140, 100)
-    pygame.draw.arc(screen, (0, 0, 0), smile_rect, 3.14, 2*3.14, 4)# две такие от носа под углом
-    pygame.draw.arc(screen, (0, 0, 0), smile_rect, 3.14, 2*3.14, 4)# усы, по три с каждой стороны
+    screen.fill((85, 68, 0))
+    pygame.draw.rect(screen, (128, 102, 0),(2, 532, 640, 532))#фон
+    pygame.draw.polygon(screen, (213, 255, 230),((340, 90 ), (340, 500), (630, 500), (630, 90)))#оконная рама
+    pygame.draw.polygon(screen, (135,205,222),((370,110), (370,200), (470,200), (470,110)))#секло1
+    pygame.draw.polygon(screen, (135,205,222),((500,110), (500,200), (600,200), (600,110)))#стекло2
+    pygame.draw.polygon(screen, (135,205,222),((370,240), (370,460), (470,460), (470,240)))#стекло3
+    pygame.draw.polygon(screen, (135,205,222),((500,240), (500,460), (600,460), (600,240)))#стекло4
+    pygame.draw.ellipse(screen, (200,113,55), (103,424,390,194))#тело
+    pygame.draw.ellipse(screen, (0,0,0), (103,424,390,194), 2)#лайн тела
+    pygame.draw.ellipse(screen, (200,113,55), (90,550,60,90))#лапа1
+    pygame.draw.ellipse(screen, (0,0,0), (90,550,60,90), 2)#лапа
+    pygame.draw.circle(screen, (200,113,55),(130,507),80)#голова
+    pygame.draw.circle(screen, (0,0,0), (130,507),80 ,2)#лайн головы
+    pygame.draw.ellipse(screen, (200,113,55), (500,520,90,40))#з хвост
+    pygame.draw.ellipse(screen, (0,0,0), (500,520,90,40), 2)#з хвост
+    pygame.draw.circle(screen, (200,113,55),(446,535),70)#бедро
+    pygame.draw.circle(screen, (0,0,0), (446,535),70 ,2)#лайн бедра
+    pygame.draw.circle(screen, (136,170,0),(87, 507),25)#глаз1
+    pygame.draw.circle(screen, (0,0,0), (87,507),25 ,2)#лайн глаза1
+    pygame.draw.circle(screen, (136,170,0),(161, 507),25)#глаз2
+    pygame.draw.circle(screen, (0,0,0), (161,507),25 ,2)#лайн глаза2
+    pygame.draw.ellipse(screen, (0,0,0), (83,483,10,50))#зрачок1
+    pygame.draw.ellipse(screen, (0,0,0), (155,483,10,50))#зрачок1
+    pygame.draw.circle(screen, (255,255,255),(80, 500),7)#глаз2
+    pygame.draw.circle(screen, (255,255,255),(150, 500),7)#глаз21
+    pygame.draw.polygon(screen, ((200,113,55)), ((65,464),(50,401),(120,450))) # раковина уха, 1,,,,,,,,
+    pygame.draw.polygon(screen, ((0,0,0)), ((65,464),(50,401),(120,450)), 2) # раковина уха, 1,,,,,,,,
+    pygame.draw.polygon(screen, ((200,113,55)), ((65,464),(50,401),(182,450)) # раковина уха, 1,,,,,,,,
+    pygame.draw.polygon(screen, ((0,0,0)),((65,464),(50,401),(182,450)), 2)) # раковина уха, 1,,,,,,,,
+    pygame.draw.ellipse(screen, (200,113,55), (188,570,90,70))#з голень
+    pygame.draw.ellipse(screen, (0,0,0), (188,570,90,70), 2)#з голень
+    pygame.draw.ellipse(screen, (200,113,55), (470,570,50,90))#з голень
+    pygame.draw.ellipse(screen, (0,0,0), (470,570,50,90), 2)#з голень
+    pygame.draw.circle(screen, (153,153,153),(383, 724),60)#клубок
+    pygame.draw.circle(screen, (0,0,0),(383, 724),60, 2)#лайн клубок////////
+    pygame.draw.line(screen, (153,153,153), (384,724), (350,760), 30)
+   
     
-        
-     
+    
+    
     pygame.display.flip()
+
+
+
+
+
+
+    
 
     mx, my = pygame.mouse.get_pos()
     text = font.render(f"x: {mx}, y: {my}", True, (0, 0, 0))
     screen.blit(text, (10, 10))
 
 
-  
+    pygame.display.flip()
     
 
 pygame.quit()
+
