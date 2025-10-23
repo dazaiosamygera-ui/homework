@@ -1,0 +1,126 @@
+import pygame
+import random
+
+pygame.init()
+screen = pygame.display.set_mode((400, 400))
+pygame.display.set_caption("Курятник")
+font = pygame.font.SysFont(None, 30)#шрифт счета
+
+while running:
+    current_time = pygame.time.get_ticks()
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+            if not game_over and not game_win:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+        
+background = pygame.image.load("chhicken.jpg")#фон с курицами
+background = pygame.transform.scale(background, (400, 400))
+
+korzinka = pygame.image.load("neyayzo.jpg.png").convert()#корзина
+korzinka = pygame.transform.scale(korzinka, (90, 90))
+
+egg = pygame.image.load("korzina.jpg").convert()#яйцо, я случайно обозвала корзиной
+egg = pygame.transform.scale(picofegg, (30, 30))
+
+spawn_points = [(150, 50), (250, 50), (350, 50)]#точки спавна
+
+running = True
+clock = pygame.time.Clock()#функция для мишени
+
+balls = []  # список активных шаров
+spawn_interval = 3000  
+last_spawn_time = 0
+player_radius = 20
+target_radius = 20
+score = 0
+death = 0
+xk = 150
+yk = 300
+xk_speed = 0
+
+while running:
+    current_time = pygame.time.get_ticks()
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_a:
+                    xk_speed = -0.05
+                elif event.key == pygame.K_d:
+                    xk_speed = +0.05
+     xk+=xk_speed#характеристики касания корзинки
+    if xk + korzinka.get_width() // 2 >= 400:
+        xk = 400 - korzina.get_width() // 2
+        xk_speed = 0
+    if xk - korzinka.get_width() // 2 <= 0:
+        xk = korzinka.get_width() // 2
+        xk_speed = 0
+        screen.blit(background, (0, 0))
+        screen.blit(korzinka, (int(xk) - korzinka.get_width() // 2, yk - korzinka.get_height() // 2 - 20))
+        if current_time - last_spawn_time > spawn_interval:
+        x, y = random.choice(spawn_points)
+        balls.append([x, y])
+        last_spawn_time = current_time
+
+    for ball in balls:
+        ball[1] += 0.01  # пикселей в миллисекунду
+        for ball in balls:
+        target_x,target_y = ball[0], ball[1]
+        player_x,player_y = int(xk) - korzinka.get_width() // 2, yk - korzinka.get_height() // 2 - 20
+        dx = player_x - target_x
+        dy = player_y - target_y
+        distance = (dx**2 + dy**2)**0.5
+        
+        if distance < player_radius + target_radius:
+            score += 1
+            ball[1] += 1000
+        if ball[1]>=300 and ball[1]<1000:
+            death += 1
+           # Убираем шары, которые упали ниже 
+    balls = [ball for ball in balls if ball[1] < 400]
+    if death>=2:
+        pygame.quit()
+        for x, y in balls:
+        screen.blit(egg, (x, y))
+
+  
+ if ((y + target_radius >= player_y)
+     (y - target_radius <= player_y + player_size)
+     (x + target_radius >= player_x)
+     (x - target_radius <= player_x + player_size)):
+                score += 1
+                if score >= win_score:
+                    game_win = True
+            elif y > 500:
+                fail_sound.play()
+                missed_count += 1
+                balls_delete.append(ball)
+            if missed_count >= max_missed:
+                    game_over = True
+        
+ if game_over:
+        text_width, text_height = font.size("MEMENTO MORI")
+        rect_width = text_width + 40
+        rect_x = (screen_width - rect_width) // 2
+        pygame.draw.rect(screen, (255, 255, 255), (rect_x, 200, rect_width, 100))
+        game_over_text = font.render("", True, (133, 32, 9))
+        screen.blit(game_over_text, (rect_x + 20, 240))
+        full_fail_sound.play()
+    
+    if game_win:
+        text_width, text_height = font.size("CARPE DIEM")
+        rect_width = text_width + 40
+        rect_x = (screen_width - rect_width) // 2
+        pygame.draw.rect(screen, (255, 255, 255), (rect_x, 200, rect_width, 100))
+        game_win_text = font.render("CARPE DIEM", True, (20, 133, 9))
+        screen.blit(game_win_text, (rect_x + 20, 240))
+        full_win_sound.play()
+
+    
+    pygame.display.flip()
+
+pygame.time.Clock().tick(60)
+    
+
+pygame.quit()
