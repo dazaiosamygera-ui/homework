@@ -6,20 +6,10 @@ screen = pygame.display.set_mode((400, 400))
 pygame.display.set_caption("Курятник")
 font = pygame.font.SysFont(None, 30)#шрифт счета
 
-while running:
-    current_time = pygame.time.get_ticks()
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-            if not game_over and not game_win:
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-        
 background = pygame.image.load("chhicken.jpg")#фон с курицами
 background = pygame.transform.scale(background, (400, 400))
-
 korzinka = pygame.image.load("neyayzo.jpg.png").convert()#корзина
 korzinka = pygame.transform.scale(korzinka, (90, 90))
-
 egg = pygame.image.load("korzina.jpg").convert()#яйцо, я случайно обозвала корзиной
 egg = pygame.transform.scale(picofegg, (30, 30))
 
