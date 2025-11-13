@@ -1,0 +1,175 @@
+import pygame
+import math
+import random
+
+pygame.init()
+
+screen = pygame.display.set_mode((596, 380))
+pygame.display.set_caption("Gun")
+try:
+    background = pygame.image.load("space.webp")
+    background = pygame.transform.scale(background, (596, 380))# space image background
+except:
+    background = pygame.Surface((598, 380))
+    background.fill((0, 0, 0))#plain color background
+
+try:
+    target_image = pygame.image.load("space_target.PNG")#target image
+    target_image.set_colorkey((255, 255, 255))#without white background
+    target_image = pygame.transform.scale(projectile_image, (40, 40))
+except:
+    target_image = pygame.Surface((40, 40))#alternative target in case of image absence
+    target_image.fill((0, 0, 255))
+    
+try:
+    gun = pygame.image.load("space_gun.PNG")
+    gun = pygame.transform.scale(background, (596, 380))# space image background
+except:
+    gun = pygame.Surface((598, 380))
+    gun.fill((0, 0, 0))#plain color background
+
+try:
+    score_sound = pygame.mixer.Sound("560580__theplax__взрыв-1.wav")
+    score_sound.set_volume(0.7)#volume
+except:
+    print("Звук попадания не найден")
+
+
+start_x, start_y = 50, 350
+x, y = start_x, start_y
+gun_width, gun_height = 40, 20
+gun_speed = 4
+
+bullet_x, bullet_y = bullet_x, bullet_y
+bullet_width, bullet_height = 10, 10
+bullet_radius = 10
+
+
+vx, vy = 0, 0
+gravity = 0.5
+bounce_loss = 0.7
+power = 12
+angle = 45
+on_ground = True
+spawn_points = [(50, 50), (150, 50), (250, 50), (350, 50)]
+
+running = True
+clock = pygame.time.Clock()
+
+targets = []  # список активных шаров (координаты)
+spawn_interval = 2000  
+last_spawn_time = 0
+
+font = pygame.font.Font(None, 24)
+
+scored_flag = False
+score = 0
+
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                angle = min(angle + 5, 80)
+            elif event.key == pygame.K_DOWN:angle = max(angle - 5, 10) 
+            elif event.key == pygame.K_w:
+                power = min(power + 1, 25)
+            elif event.key == pygame.K_s:
+                power = max(power - 1, 5)
+            elif event.key == pygame.K_SPACE and on_ground:
+                rad = math.radians(angle)
+                vx = power * math.cos(rad)
+                vy = -power * math.sin(rad)
+                on_ground = False
+
+while running:
+    current_time = pygame.time.get_ticks()
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    if current_time - last_spawn_time > spawn_interval:
+        x, y = random.choice(spawn_points)
+        targets.append([x, y])
+        last_spawn_time = current_time
+
+    for target in targets:
+        target[1] += 0.01  # пикселей в миллисекунду
+
+    # Убираем шары, которые упали ниже 
+    target = [target for targets in targets if target[1] < 400]
+
+    screen.fill((255, 255, 255))
+    for x, y in targets:
+        pygame.draw.circle(screen, (255, 0, 0), (x, y), 20)
+      #gun motion  
+        keys = pygame.key.get_pressed()
+    if keys[pygame.K_a]:
+        gun_x -= gun_speed
+    if keys[pygame.K_d]:
+        gun_x += gun_speed
+    if keys[pygame.K_w]:
+        gun_y -= gun_speed
+    if keys[pygame.K_s]:
+        gun_y += gun_speed
+        #setting borders for the gun
+          if gun_x < 35: gun_x = 35
+    if gun_x > 480: gun_x = 480
+    if gun_y < 35: gun_y = 35
+    if gun_y > 445: gun_y = 445
+
+    # shooting
+    if not on_ground:
+        vy += gravity
+        bullet_x += vx
+        bullet_y += vy
+
+    # miss
+    if bullet_y > 380 or bullet_x > 596 or pea_x < 0:
+        on_ground = True
+    #checking touch    
+      bullet_rect = pygame.Rect(x, y, bullet_width, bullet_height)
+    
+    for target in targets:
+        target_rect = pygame.Rect(target['x'], target['y'], target['width'], target['height'])
+        
+        if bullet_rect.colliderect(target_rect) and not target['hit']:
+            target['hit'] = True
+            target['hit_timer'] = 0
+            score += 1
+            try:
+                score_sound.play()
+            except:
+                pass
+                
+       screen.blit(background, (0, 0))
+          
+                   if on_ground:
+        points = []
+        rad = math.radians(angle)
+        temp_vx = power * math.cos(rad)
+        temp_vy = -power * math.sin(rad)
+        temp_x, temp_y = start_x, start_y
+        for i in range(60):
+            temp_vy += gravity
+            temp_x += temp_vx
+            temp_y += temp_vy
+            if temp_y + projectile_height >= 400:
+                break
+            points.append((int(temp_x), int(temp_y)))
+        if len(points) > 1:
+            pygame.draw.lines(screen, (0, 0, 0), False, points, 2)
+            
+    screen.blit(text_angle, (10, 10))
+    screen.blit(text_power, (10, 30))
+    screen.blit(text_score, (10, 50))
+    screen.blit(text_music, (10, 70))
+
+    pygame.display.flip()
+    pygame.time.delay(20)
+
+pygame.quit()
