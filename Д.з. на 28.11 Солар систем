@@ -12,14 +12,14 @@ FPS = 60
 clock = pygame.time.Clock()
 
 try:
-    pygame.mixer.music.load('space _sound.mp3')  
+    pygame.mixer.music.load('space.mp3')  
     pygame.mixer.music.set_volume(0.5)  
     pygame.mixer.music.play(-1)  
     print("Играет")
 except:
     print("Без звука")
 try:
-    original_background = pygame.image.load('space_bg.jpg')
+    original_background = pygame.image.load('home.jpg')
     background = pygame.transform.scale(original_background, (WIDTH, HEIGHT))
     print("На фоне звездное небо")
     use_background = True
