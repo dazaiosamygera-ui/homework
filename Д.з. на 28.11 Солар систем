@@ -1,0 +1,231 @@
+import pygame
+import math
+import random
+
+pygame.init()
+screen = pygame.display.set_mode((800, 600), pygame.RESIZABLE)
+pygame.display.set_caption("Солнечная система")
+WIDTH, HEIGHT = 800, 600
+cx = WIDTH // 2
+cy = HEIGHT // 2   
+FPS = 60
+clock = pygame.time.Clock()
+
+try:
+    pygame.mixer.music.load('space _sound.mp3')  
+    pygame.mixer.music.set_volume(0.5)  
+    pygame.mixer.music.play(-1)  
+    print("Играет")
+except:
+    print("Без звука")
+try:
+    original_background = pygame.image.load('space_bg.jpg')
+    background = pygame.transform.scale(original_background, (WIDTH, HEIGHT))
+    print("На фоне звездное небо")
+    use_background = True
+except:
+    print("Заливка черным")
+    use_background = False
+
+# Загрузка картинки солнца
+try:
+    sun_image = pygame.image.load('solar_sun.png')
+    sun_radius = 40
+    sun_image = pygame.transform.scale(original_sun_image, (sun_radius * 2, sun_radius * 2))
+    print("В центре Солнце")
+    use_sun_image = True
+except:
+    print("В центре круг")
+    use_sun_image = False
+    sun_color = (255, 200, 0)
+    sun_radius = 25
+
+class Planet:
+    def __init__(self, screen, radius, orbit_radius, color, speed, angle=0):
+        self.screen = screen
+        self.radius = radius
+        self.orbit_radius = orbit_radius
+        self.color = color
+        self.speed = speed
+        self.angle = angle
+        self.x = 0
+        self.y = 0
+
+    def update(self, dt):
+        global cx, cy
+        self.angle += self.speed * dt
+        self.x = cx + self.orbit_radius * math.cos(self.angle)
+        self.y = cy + self.orbit_radius * math.sin(self.angle)
+
+    def draw(self):
+        pygame.draw.circle(self.screen, self.color, (int(self.x), int(self.y)), self.radius)
+ #Для планет с кольцами зададим отдельные классы
+class Saturn(Planet):
+    def __init__(self, screen, radius, orbit_radius, color, speed, angle=0):
+        super().__init__(screen, radius, orbit_radius, color, speed, angle)
+        self.ring_radius = radius + 8  #Радиус кольца
+        
+    def draw(self):
+        pygame.draw.circle(self.screen, self.color, (int(self.x), int(self.y)), self.radius)
+        #Горизонтальное кольцо
+        pygame.draw.ellipse(self.screen, (210, 180, 140), 
+                           (int(self.x - self.ring_radius), 
+                            int(self.y - self.ring_radius/3), 
+                            self.ring_radius * 2, 
+                            self.ring_radius * 2/3), 2)
+
+class Uranus(Planet):
+    def __init__(self, screen, radius, orbit_radius, color, speed, angle=0):
+        super().__init__(screen, radius, orbit_radius, color, speed, angle)
+        self.ring_radius = radius + 6  #Радиус кольца
+        
+    def draw(self):
+        #Рисуем планету
+        pygame.draw.circle(self.screen, self.color, (int(self.x), int(self.y)), self.radius)
+        #Вертикальное кольцо
+        pygame.draw.ellipse(self.screen, (180, 220, 240), 
+                           (int(self.x - self.ring_radius/3), 
+                            int(self.y - self.ring_radius), 
+                            self.ring_radius * 2/3, 
+                            self.ring_radius * 2), 2)
+ #Класс спутника
+class Moon:
+    def __init__(self, screen, planet, radius, orbit_radius, color, speed):
+        self.screen = screen
+        self.planet = planet  #Родителькая планета
+        self.radius = radius
+        self.orbit_radius = orbit_radius
+        self.color = color
+        self.speed = speed
+        self.angle = 0
+        self.x = 0
+        self.y = 0
+
+    def update(self, dt):
+        self.angle += self.speed * dt
+        # Вращение вокруг планеты
+        self.x = self.planet.x + self.orbit_radius * math.cos(self.angle)
+        self.y = self.planet.y + self.orbit_radius * math.sin(self.angle)
+
+    def draw(self):
+        pygame.draw.circle(self.screen, self.color, (int(self.x), int(self.y)), self.radius)
+ #Класс интерактивного астероида
+class Asteroid:
+    def __init__(self, screen):
+        self.screen = screen
+        self.reset()
+      #Рантомные точки спавна   
+    def reset(self):
+        side = random.choice(['up', 'right', 'down', 'left'])
+        if side == 'up':
+            self.x = random.randint(0, WIDTH)
+            self.y = -20
+        elif side == 'right':
+            self.x = WIDTH + 20
+            self.y = random.randint(0, HEIGHT)
+        elif side == 'down':
+            self.x = random.randint(0, WIDTH)
+            self.y = HEIGHT + 20
+        else:
+            self.x = -20
+            self.y = random.randint(0, HEIGHT)
+            
+        self.speed_x = random.uniform(-300, 300)
+        self.speed_y = random.uniform(-300, 300)
+        self.radius = random.randint(8, 15)
+        self.color = (150, 150, 150)
+        self.active = False
+        
+    def update(self, dt):
+        if self.active:
+            self.x += self.speed_x * dt
+            self.y += self.speed_y * dt
+            
+            if (self.x < -50 or self.x > WIDTH + 50 or
+self.y < -50 or self.y > HEIGHT + 50):
+                self.active = False
+
+    def draw(self):
+        if self.active:
+            pygame.draw.circle(self.screen, self.color, (int(self.x), int(self.y)), self.radius)
+
+
+sun_color = (255, 200, 0)
+sun_radius = 25
+
+mercury = Planet(screen, radius=3, orbit_radius=50, color=(200, 200, 200), speed=4.1)
+venus = Planet(screen, radius=7, orbit_radius=80, color=(255, 200, 100), speed=1.6)
+earth = Planet(screen, radius=8, orbit_radius=120, color=(100, 150, 255), speed=1.2)
+mars = Planet(screen, radius=6, orbit_radius=160, color=(255, 100, 80), speed=1)
+jupiter = Planet(screen, radius=18, orbit_radius=220, color=(255, 180, 100), speed=0.9)
+saturn = Saturn(screen, radius=15, orbit_radius=280, color=(255, 220, 150), speed=0.8)
+uranus = Uranus(screen, radius=12, orbit_radius=340, color=(200, 230, 255), speed=0.7)
+neptune = Planet(screen, radius=11, orbit_radius=400, color=(80, 120, 255), speed=0.6)
+
+#Луна
+moon = Moon(screen, earth, radius=3, orbit_radius=15, color=(200, 200, 200), speed=8)
+
+#спутники Марса(Фобос и Деймос)
+phobos = Moon(screen, mars, radius=2, orbit_radius=10, color=(180, 160, 140), speed=12)
+deimos = Moon(screen, mars, radius=1, orbit_radius=14, color=(160, 140, 120), speed=6)
+
+asteroid = Asteroid(screen)
+
+running = True
+while running:
+    dt = clock.tick(FPS) / 1000.0
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.VIDEORESIZE:
+            WIDTH, HEIGHT = event.w, event.h
+            screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
+            cx = WIDTH // 2
+            cy = HEIGHT // 2
+        elif event.type == pygame.MOUSEBUTTONDOWN:#При нажатии летит астероид
+            if not asteroid.active:
+                asteroid.reset()
+                asteroid.active = True
+    
+    mercury.update(dt)
+    venus.update(dt)
+    earth.update(dt)
+    mars.update(dt)
+    jupiter.update(dt)
+    saturn.update(dt)
+    uranus.update(dt)
+    neptune.update(dt)
+    moon.update(dt)  
+    phobos.update(dt)  
+    deimos.update(dt)  
+    asteroid.update(dt)
+    
+    screen.fill((0, 0, 20))
+    pygame.draw.circle(screen, sun_color, (cx, cy), sun_radius)
+    
+    #Орбиты
+    pygame.draw.circle(screen, (255, 255, 255), (cx, cy), 50, 1)  
+    pygame.draw.circle(screen, (255, 255, 255), (cx, cy), 80, 1) 
+    pygame.draw.circle(screen, (255, 255, 255), (cx, cy), 120, 1) 
+    pygame.draw.circle(screen, (255, 255, 255), (cx, cy), 160, 1) 
+    pygame.draw.circle(screen, (255, 255, 255), (cx, cy), 220, 1) 
+    pygame.draw.circle(screen, (255, 255, 255), (cx, cy), 280, 1) 
+    pygame.draw.circle(screen, (255, 255, 255), (cx, cy), 340, 1) 
+    pygame.draw.circle(screen, (255, 255, 255), (cx, cy), 400, 1)
+    
+    mercury.draw()
+    venus.draw()
+    earth.draw()
+    mars.draw()
+    jupiter.draw()
+    saturn.draw()
+    uranus.draw()
+    neptune.draw()
+    moon.draw()  
+    phobos.draw() 
+    deimos.draw()  
+    asteroid.draw()
+    
+    pygame.display.flip()
+
+pygame.quit()
