@@ -1,0 +1,560 @@
+
+import pygame
+import random
+pygame.init()
+
+try:
+    pygame.mixer.init()
+    has_audio = True
+except pygame.error as error:
+    print(f"Нет аудио: {error}. Продолжаем без звука.")
+    has_audio = False
+
+screen_width, screen_height = 400, 300
+screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
+pygame.display.set_caption("Geometry Dash")
+
+BASE_WIDTH, BASE_HEIGHT = 400, 300
+ground_height = 50
+
+REMOVE_BACKGROUND = False  
+USE_IMAGES = True 
+
+scale_x = screen_width / BASE_WIDTH
+scale_y = screen_height / BASE_HEIGHT
+
+def load_image(name, default_size=(100, 100), default_color=(200, 200, 200)):
+    try:
+        image = pygame.image.load(name).convert_alpha()
+        return image
+    except Exception as error:
+        print(f"Не удалось загрузить изображение {name}: {error}")
+    
+    surface = pygame.Surface(default_size, pygame.SRCALPHA)
+    surface.fill(default_color)
+    return surface
+
+player_image = load_image("player.png", (40, 40), (0, 255, 0))
+bullet_image = load_image("cube_bullet.jpg", (10, 10), (255, 0, 0))
+spike_image = load_image("cube_villian.jpg", (30, 80), (255, 0, 0))
+obstacle_image = load_image("cube_ship.jpg", (40, 40), (255, 165, 0))
+block_image = load_image("cube_evil.jpg", (40, 40), (255, 200, 0))
+jumppad_image = load_image("jumppad.png", (60, 20), (0, 255, 255))
+
+background_day_image = load_image("cube_day.jpg", (400, 300), (135, 206, 235))
+background_night_image = load_image("cube_night.png", (400, 300), (25, 25, 112))
+
+cube_icon = load_image("icon.jpg", (100, 100), (150, 150, 255))
+
+def scale_value(value, axis='x'):
+    if axis == 'x':
+        return int(value * scale_x)
+    elif axis == 'y':
+        return int(value * scale_y)
+    return value
+
+try:
+    shoot_sound = pygame.mixer.Sound("orujie-lazer.wav")
+except Exception as e:
+    print(f"Неn звукa выстрела: {error}")
+    shoot_sound = None
+
+try:
+    hit_sound = pygame.mixer.Sound("combat-strike-in-a-computer-game.wav")
+except Exception as e:
+    print(f"Неn звука попадания: {error}")
+    hit_sound = None
+
+try:
+    jump_sound = pygame.mixer.Sound("alien-jump.wav")
+except Exception as e:
+    print(f"Нет звука прыжка: {error}")
+    jump_sound = None
+
+try:
+    pygame.mixer.music.load("futuristic-techno-voyage_88817.waw")
+    pygame.mixer.music.play(-1)
+    pygame.mixer.music.set_volume(0.5)
+    theme_music = True
+except Exception as e:
+    print(f"Нет фоновой музыки: {error}")
+    theme_music = False
+
+class Obstacle:
+    def __init__(self, x, width, height, image=None, use_image=True):
+        self.x = x
+        self.width = width
+        self.height = height
+        self.color = (255, 165, 0)
+        self.original_width = width
+        self.original_height = height
+        self.type = "obstacle"
+        self.use_image = use_image
+        
+        if image and use_image:
+            self.original_image = image
+            self.image = pygame.transform.scale(self.original_image, (width, height))
+        else:
+            self.image = None
+    
+    def scale_image(self):
+        if self.image:
+            self.image = pygame.transform.scale(self.original_image, (self.width, self.height))
+        
+    def update(self, scroll_speed, game_speed):
+        self.x -= scroll_speed * game_speed
+        
+    def draw(self, screen, ground_height):
+        if self.image and self.use_image:
+            screen.blit(self.image, (self.x, screen_height - ground_height - self.height))
+        else:
+            pygame.draw.rect(screen, self.color, (self.x, screen_height - ground_height - self.height, self.width, self.height))
+    
+    def get_rect(self, ground_height):
+        return pygame.Rect(self.x, screen_height - ground_height - self.height, self.width, self.height)
+    
+    def is_off_screen(self):
+        return self.x < -100
+        
+    def update_size(self, new_scale_x, new_scale_y):
+        self.width = int(self.original_width * new_scale_x)
+        self.height = int(self.original_height * new_scale_y)
+        if self.image:
+            self.scale_image()
+
+class Spike(Obstacle):
+    def __init__(self, x, width, height, use_image=True):
+        super().__init__(x, width, height, spike_image, use_image)
+        self.type = "spike"
+        if not use_image:
+            self.color = (255, 0, 0)
+        
+    def draw(self, screen, ground_height):
+        if self.image and self.use_image:
+            screen.blit(self.image, (self.x, screen_height - ground_height - self.height))
+        else:
+            points = [(self.x, screen_height - ground_height),
+                      (self.x + self.width // 2, screen_height - ground_height - self.height),
+                      (self.x + self.width, screen_height - ground_height)]
+            pygame.draw.polygon(screen, self.color, points)
+
+class Block(Obstacle):
+    def __init__(self, x, width, height, use_image=True):
+        super().__init__(x, width, height, block_image, use_image)
+        self.type = "block"
+        self.original_y = screen_height - ground_height - height
+        self.y = self.original_y
+        self.speed = 2
+        self.direction = 1
+        if not use_image:
+            self.color = (255, 200, 0)
+        
+    def update(self, scroll_speed, game_speed):
+        super().update(scroll_speed, game_speed)
+        self.y += self.speed * self.direction * game_speed
+        if self.y < self.original_y - scale_value(50, 'y') or self.y > self.original_y + scale_value(50, 'y'):
+            self.direction *= -1
+            
+    def draw(self, screen, ground_height):
+        if self.image and self.use_image:
+            screen.blit(self.image, (self.x, self.y))
+        else:
+            pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
+    
+    def get_rect(self, ground_height):
+        return pygame.Rect(self.x, self.y, self.width, self.height)
+    
+    def update_size(self, new_scale_x, new_scale_y):
+        super().update_size(new_scale_x, new_scale_y)
+        self.original_y = screen_height - ground_height - self.height
+        self.y = self.original_y
+
+class JumpPad(Obstacle):
+    def __init__(self, x, width, height, use_image=True):
+        super().__init__(x, width, height, jumppad_image, use_image)
+        self.type = "jump_pad"
+        self.color = (0, 255, 255)
+        self.jump_power = 30
+        if not use_image:
+            self.color = (0, 255, 255)
+        
+    def draw(self, screen, ground_height):
+        if self.image and self.use_image:
+            screen.blit(self.image, (self.x, screen_height - ground_height - self.height))
+        else:
+            pygame.draw.rect(screen, self.color, 
+                            (self.x, screen_height - ground_height - self.height,
+                             self.width, self.height))
+            for i in range(5):
+                y_pos = screen_height - ground_height - (i * scale_value(5, 'y'))
+                pygame.draw.line(screen, (200, 200, 200), 
+                                (self.x + scale_value(5, 'x'), y_pos), 
+                                (self.x + self.width - scale_value(5, 'x'), y_pos), 
+                                scale_value(2, 'x'))
+
+player_x = scale_value(100, 'x')
+player_y = scale_value(150, 'y')
+player_radius = scale_value(20, 'x')
+original_player_radius = 20
+gravity = 1
+y_speed = 0
+x_speed = 0
+is_jumping = False
+is_on_jumppad = False
+is_alive = True
+
+world_x = 0
+scroll_speed = scale_value(3, 'x')
+original_scroll_speed = 3
+
+player_texture = pygame.transform.scale(ball_texture, (player_radius * 2, player_radius * 2))
+
+background_day = pygame.transform.scale(background_day_image, (screen_width * 2, screen_height))
+background_night = pygame.transform.scale(background_night_image, (screen_width * 2, screen_height))
+background = background_day
+
+bg_x = 0
+bg_speed = scroll_speed * 0.5
+
+bullet_image_scaled = pygame.transform.scale(bullet_image, (scale_value(10, 'x'), scale_value(10, 'y')))
+    
+class Bullet:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.radius = scale_value(5, 'x')
+        self.speed = scale_value(10, 'x')
+        self.original_radius = 5
+        self.original_speed = 10
+        self.texture = pygame.transform.scale(ball_texture, (self.radius * 2, self.radius * 2))
+        
+    def update(self):
+        self.x += self.speed
+    
+    def draw(self, screen):
+        if USE_IMAGES:
+            texture_rect = self.texture.get_rect(center=(int(self.x), int(self.y)))
+            screen.blit(self.texture, texture_rect)
+        else:
+            pygame.draw.circle(screen, (255, 0, 0), (int(self.x), int(self.y)), self.radius)
+    
+    def is_off_screen(self, screen_width):
+        return self.x > screen_width + scale_value(100, 'x')
+    
+    def get_rect(self):
+        return pygame.Rect(self.x - self.radius,
+                          self.y - self.radius,
+                          self.radius * 2,
+                          self.radius * 2)
+    
+    def update_size(self, new_scale_x, new_scale_y):
+        self.radius = int(self.original_radius * new_scale_x)
+        self.speed = int(self.original_speed * new_scale_x)
+        self.texture = pygame.transform.scale(ball_texture, (self.radius * 2, self.radius * 2))
+
+def create_obstacles():
+    return [Spike(scale_value(400, 'x'), scale_value(30, 'x'), scale_value(80, 'y'), USE_IMAGES), 
+            Obstacle(scale_value(600, 'x'), scale_value(40, 'x'), scale_value(40, 'y'), obstacle_image, USE_IMAGES),
+            Block(scale_value(800, 'x'), scale_value(40, 'x'), scale_value(40, 'y'), USE_IMAGES),
+            JumpPad(scale_value(1000, 'x'), scale_value(60, 'x'), scale_value(20, 'y'), USE_IMAGES), 
+            Spike(scale_value(1200, 'x'), scale_value(30, 'x'), scale_value(100, 'y'), USE_IMAGES),
+            Obstacle(scale_value(1400, 'x'), scale_value(60, 'x'), scale_value(60, 'y'), obstacle_image, USE_IMAGES)]
+
+obstacles = create_obstacles()
+
+bullets = []
+last_shot = 0
+shot_delay = 500
+
+# Цвета
+player_color = (0, 255, 0)
+ground_color = (139, 69, 19)
+
+running = True
+clock = pygame.time.Clock()
+game_speed = 1.0
+score = 0
+
+def check_collision(player_x, player_y, player_radius, obstacle, ground_height):
+    player_rect = pygame.Rect(player_x - player_radius, 
+                             player_y - player_radius, 
+                             player_radius * 2, 
+                             player_radius * 2)
+    
+    obstacle_rect = obstacle.get_rect(ground_height)
+    
+    return player_rect.colliderect(obstacle_rect)
+
+def check_bullet_collisions(bullet, obstacle, ground_height):
+    bullet_rect = bullet.get_rect()
+    obstacle_rect = obstacle.get_rect(ground_height)
+    return bullet_rect.colliderect(obstacle_rect)
+
+def resize_all(new_width, new_height):
+    global scale_x, scale_y, screen_width, screen_height
+    global player_x, player_y, player_radius, player_texture
+    global background_day, background_night, background, bullet_image_scaled
+    global scroll_speed, obstacles, ground_height, bg_x, bg_speed
+    global bullets
+    
+    old_scale_x = scale_x
+    old_scale_y = scale_y
+    
+    screen_width, screen_height = new_width, new_height
+    
+    scale_x = screen_width / BASE_WIDTH
+    scale_y = screen_height / BASE_HEIGHT
+    
+    ground_height = int(50 * scale_y)
+    
+    player_x = int(player_x * (scale_x / old_scale_x))
+    player_y = int(player_y * (scale_y / old_scale_y))
+    
+    if player_x - player_radius < 0:
+        player_x = player_radius
+    if player_x + player_radius > screen_width:
+        player_x = screen_width - player_radius
+    if player_y - player_radius < 0:
+        player_y = player_radius
+    if player_y + player_radius > screen_height - ground_height:
+        player_y = screen_height - ground_height - player_radius
+    
+    player_radius = int(20 * scale_x)
+    player_texture = pygame.transform.scale(ball_texture, (player_radius * 2, player_radius * 2))
+    
+  
+    background_day = pygame.transform.scale(background_day_image, (screen_width * 2, screen_height))
+    background_night = pygame.transform.scale(background_night_image, (screen_width * 2, screen_height))
+    
+    current_is_day = (background == background_day)
+    background = background_day if current_is_day else background_night
+    
+    bg_x = 0
+    
+    bullet_image_scaled = pygame.transform.scale(bullet_image, 
+                                                (int(10 * scale_x), int(10 * scale_y)))
+    
+    scroll_speed = int(original_scroll_speed * scale_x)
+    bg_speed = scroll_speed * 0.5
+ 
+    for obstacle in obstacles:
+        if old_scale_x > 0:
+            obstacle.x = int(obstacle.x * (scale_x / old_scale_x))
+        obstacle.update_size(scale_x, scale_y)
+    
+    for bullet in bullets:
+        bullet.x = int(bullet.x * (scale_x / old_scale_x))
+        bullet.y = int(bullet.y * (scale_y / old_scale_y))
+        bullet.update_size(scale_x, scale_y)
+while running:
+    current_time = pygame.time.get_ticks()
+    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.VIDEORESIZE:
+            resize_all(event.w, event.h)
+            screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+            
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE or event.key == pygame.K_w:
+                if not is_jumping or is_on_jumppad:
+                    y_speed = -int(20 * scale_y)
+                    if is_on_jumppad:
+                        y_speed = -int(30 * scale_y)
+                        x_speed += int(5 * scale_x)
+                    is_jumping = True
+                    is_on_jumppad = False
+                    if jump_sound:
+                        jump_sound.play()
+                        
+            elif event.key == pygame.K_1:
+                background = background_night if background == background_day else background_day
+            elif event.key == pygame.K_2:
+                global USE_IMAGES
+                USE_IMAGES = not USE_IMAGES
+                for obstacle in obstacles:
+                    obstacle.use_image = USE_IMAGES
+            elif event.key == pygame.K_3:
+                global REMOVE_BACKGROUND
+                REMOVE_BACKGROUND = not REMOVE_BACKGROUND
+            elif event.key == pygame.K_LSHIFT:
+                if current_time - last_shot > shot_delay:
+                    bullets.append(Bullet(player_x + player_radius, player_y))
+                    last_shot = current_time
+                    if shoot_sound:
+                        shoot_sound.play()
+    
+    if is_alive:
+        keys = pygame.key.get_pressed()
+        
+        if keys[pygame.K_LEFT]:
+            x_speed = -int(5 * scale_x)
+        elif keys[pygame.K_RIGHT]:
+            x_speed = int(5 * scale_x)
+        else:
+            if x_speed > 0:
+                x_speed -= int(0.5 * scale_x)
+                if x_speed < 0:
+                    x_speed = 0
+            elif x_speed < 0:
+                x_speed += int(0.5 * scale_x)
+                if x_speed > 0:
+                    x_speed = 0
+        
+        player_x += x_speed
+        
+        y_speed += gravity
+        player_y += y_speed
+        
+        if player_x - player_radius < 0:
+            player_x = player_radius
+            x_speed = 0
+        if player_x + player_radius > screen_width:
+            player_x = screen_width - player_radius
+            x_speed = 0
+        
+        if player_y + player_radius >= screen_height - ground_height:
+            player_y = screen_height - ground_height - player_radius
+            y_speed = 0
+            is_jumping = False
+            is_on_jumppad = False
+        if player_y - player_radius <= 0:
+            player_y = player_radius
+            y_speed = 0
+        
+        world_x -= scroll_speed * game_speed
+        score += scroll_speed * game_speed
+        
+        bg_x -= bg_speed * game_speed
+        if bg_x <= -screen_width:
+            bg_x = 0
+    
+    for obstacle in obstacles:
+        obstacle.update(scroll_speed, game_speed)
+        
+    obstacles = [obs for obs in obstacles if not obs.is_off_screen()]
+    
+    if len(obstacles) < 6:
+        last_obstacle = max(obstacles, key=lambda o: o.x) if obstacles else None
+        new_x = last_obstacle.x + int(300 * scale_x) if last_obstacle else int(400 * scale_x)
+        
+        obstacle_type = random.choice(["spike", "block", "jump_pad", "obstacle"])
+        if obstacle_type == "spike":
+            new_obstacle = Spike(new_x, 
+                                int(30 * scale_x), 
+                                int(60 * scale_y) + random.randint(0, int(40 * scale_y)),
+                                USE_IMAGES)
+        elif obstacle_type == "block":
+            new_obstacle = Block(new_x, 
+                                int(40 * scale_x), 
+                                int(40 * scale_y),
+                                USE_IMAGES)
+        elif obstacle_type == "jump_pad":
+            new_obstacle = JumpPad(new_x, 
+                                  int(60 * scale_x), 
+                                  int(20 * scale_y),
+                                  USE_IMAGES)
+        else:
+            new_obstacle = Obstacle(new_x, 
+                                   int(40 * scale_x) + random.randint(0, int(20 * scale_x)), 
+                                   int(40 * scale_y) + random.randint(0, int(30 * scale_y)), 
+                                   obstacle_image,
+                                   USE_IMAGES)
+        
+        obstacles.append(new_obstacle)
+    
+    for bullet in bullets[:]:
+        bullet.update()
+        
+        for obstacle in obstacles[:]:
+            if check_bullet_collisions(bullet, obstacle, ground_height):
+                if bullet in bullets:
+                    bullets.remove(bullet)
+                if obstacle in obstacles:
+                    obstacles.remove(obstacle)
+                if hit_sound:
+                    hit_sound.play()
+                break
+        
+        if bullet.is_off_screen(screen_width):
+            bullets.remove(bullet)
+    
+    if is_alive:
+        for obstacle in obstacles:
+            if check_collision(player_x, player_y, player_radius, obstacle, ground_height):
+                if obstacle.type == "jump_pad":
+                    is_on_jumppad = True
+                else:
+                    is_alive = False
+                    player_color = (255, 0, 0)
+                    print(f"Игра окончена! Вы столкнулись с препятствием типа: {obstacle.type}")
+                    break
+    
+    if not REMOVE_BACKGROUND:
+       
+        screen.fill((0, 0, 0))
+        screen.blit(background, (bg_x, 0))
+        screen.blit(background, (bg_x + screen_width, 0))
+    else:
+       
+        screen.fill((50, 50, 80)) 
+    
+    pygame.draw.rect(screen, ground_color, (0, screen_height - ground_height, screen_width, ground_height))
+    
+    for obstacle in obstacles:
+        obstacle.draw(screen, ground_height)
+    
+
+    for bullet in bullets:
+        bullet.draw(screen)
+    
+    if USE_IMAGES:
+        texture_rect = player_texture.get_rect(center=(int(player_x), int(player_y)))
+        screen.blit(player_texture, texture_rect)
+    else:
+        pygame.draw.circle(screen, player_color, (int(player_x), int(player_y)), player_radius)
+    
+    font = pygame.font.Font(None, 36)
+    score_text = font.render(f"Score: {int(score)}", True, (255, 255, 255))
+    screen.blit(score_text, (10, 10))
+    
+    info_font = pygame.font.Font(None, 24)
+    image_mode = "Картинки" if USE_IMAGES else "Без картинок"
+    bg_mode = "Без фона" if REMOVE_BACKGROUND else "Фон остался"
+    
+    info_text1 = info_font.render(f"Press 2: {image_mode}", True, (200, 200, 200))
+    info_text2 = info_font.render(f"Press 3: {bg_mode}", True, (200, 200, 200))
+    screen.blit(info_text1, (10, screen_height - 50))
+    screen.blit(info_text2, (10, screen_height - 25))
+    
+    if not is_alive:
+        game_over_font = pygame.font.Font(None, 72)
+        game_over_text = game_over_font.render("GAME OVER", True, (255, 0, 0))
+        screen.blit(game_over_text, (screen_width//2 - game_over_text.get_width()//2, 
+                                    screen_height//2 - game_over_text.get_height()//2))
+        
+        restart_font = pygame.font.Font(None, 36)
+        restart_text = restart_font.render("Нажмите R для перезапуска", True, (255, 255, 255))
+        screen.blit(restart_text, (screen_width//2 - restart_text.get_width()//2, 
+                                  screen_height//2 + 50))
+        
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_r]:
+            is_alive = True
+            player_color = (0, 255, 0)
+            player_x = int(100 * scale_x)
+            player_y = int(150 * scale_y)
+            y_speed = 0
+            x_speed = 0
+            is_jumping = False
+            is_on_jumppad = False
+            score = 0
+            bg_x = 0
+            obstacles = create_obstacles()
+            bullets.clear()
+    
+    pygame.display.flip()
+    clock.tick(60)
+
+pygame.quit()
