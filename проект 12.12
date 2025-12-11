@@ -1,13 +1,12 @@
-
 import pygame
 import random
-pygame.init()
 
+pygame.init()
 try:
     pygame.mixer.init()
     has_audio = True
-except pygame.error as error:
-    print(f"Нет аудио: {error}. Продолжаем без звука.")
+except pygame.error as e:
+    print(f"Нет аудио: {e}. Играем без звука.")
     has_audio = False
 
 screen_width, screen_height = 400, 300
@@ -17,34 +16,33 @@ pygame.display.set_caption("Geometry Dash")
 BASE_WIDTH, BASE_HEIGHT = 400, 300
 ground_height = 50
 
-REMOVE_BACKGROUND = False  
+REMOVE_BACKGROUND = False 
 USE_IMAGES = True 
-
 scale_x = screen_width / BASE_WIDTH
 scale_y = screen_height / BASE_HEIGHT
 
-def load_image(name, default_size=(100, 100), default_color=(200, 200, 200)):
+def load_image(filename, default_size=(100, 100), default_color=(200, 200, 200)):
     try:
-        image = pygame.image.load(name).convert_alpha()
+        image = pygame.image.load(filename).convert_alpha()
         return image
-    except Exception as error:
-        print(f"Не удалось загрузить изображение {name}: {error}")
+    except Exception as e:
+        print(f"Нет картинки {filename}: {e}")
     
     surface = pygame.Surface(default_size, pygame.SRCALPHA)
     surface.fill(default_color)
     return surface
 
 player_image = load_image("player.png", (40, 40), (0, 255, 0))
-bullet_image = load_image("cube_bullet.jpg", (10, 10), (255, 0, 0))
-spike_image = load_image("cube_villian.jpg", (30, 80), (255, 0, 0))
-obstacle_image = load_image("cube_ship.jpg", (40, 40), (255, 165, 0))
-block_image = load_image("cube_evil.jpg", (40, 40), (255, 200, 0))
+bullet_image = load_image("cube_bullet.png", (10, 10), (255, 0, 0))
+spike_image = load_image("cube_ship.webp", (30, 80), (255, 0, 0))
+obstacle_image = load_image("cube_evil.jpg", (40, 40), (255, 165, 0))
+block_image = load_image("cube_villian.jpg", (40, 40), (255, 200, 0))
 jumppad_image = load_image("jumppad.png", (60, 20), (0, 255, 255))
 
 background_day_image = load_image("cube_day.jpg", (400, 300), (135, 206, 235))
 background_night_image = load_image("cube_night.png", (400, 300), (25, 25, 112))
 
-cube_icon = load_image("icon.jpg", (100, 100), (150, 150, 255))
+ball_texture = load_image("icon.jpg", (100, 100), (150, 150, 255))
 
 def scale_value(value, axis='x'):
     if axis == 'x':
@@ -56,29 +54,30 @@ def scale_value(value, axis='x'):
 try:
     shoot_sound = pygame.mixer.Sound("orujie-lazer.wav")
 except Exception as e:
-    print(f"Неn звукa выстрела: {error}")
+    print(f"Нет звука выстрела: {e}")
     shoot_sound = None
 
 try:
-    hit_sound = pygame.mixer.Sound("combat-strike-in-a-computer-game.wav")
+    hit_sound = pygame.mixer.Sound("hit.wav")
 except Exception as e:
-    print(f"Неn звука попадания: {error}")
+    print(f"Нет звука попадания: {e}")
     hit_sound = None
 
 try:
-    jump_sound = pygame.mixer.Sound("alien-jump.wav")
+    jump_sound = pygame.mixer.Sound("combat-strike-in-a-computer-game.wav")
 except Exception as e:
-    print(f"Нет звука прыжка: {error}")
+    print(f"Нет звука прыжка: {e}")
     jump_sound = None
 
 try:
-    pygame.mixer.music.load("futuristic-techno-voyage_88817.waw")
+    pygame.mixer.music.load("")
+    pygame.mixer.music.load("futuristic-techno-voyage_88817 (1).wav")
     pygame.mixer.music.play(-1)
     pygame.mixer.music.set_volume(0.5)
-    theme_music = True
+    has_music = True
 except Exception as e:
-    print(f"Нет фоновой музыки: {error}")
-    theme_music = False
+    print(f"Нет фоновой музыки: {e}")
+    has_music = False
 
 class Obstacle:
     def __init__(self, x, width, height, image=None, use_image=True):
@@ -90,7 +89,7 @@ class Obstacle:
         self.original_height = height
         self.type = "obstacle"
         self.use_image = use_image
-        
+
         if image and use_image:
             self.original_image = image
             self.image = pygame.transform.scale(self.original_image, (width, height))
@@ -242,10 +241,7 @@ class Bullet:
         return self.x > screen_width + scale_value(100, 'x')
     
     def get_rect(self):
-        return pygame.Rect(self.x - self.radius,
-                          self.y - self.radius,
-                          self.radius * 2,
-                          self.radius * 2)
+        return pygame.Rect(self.x - self.radius,self.y - self.radius,self.radius * 2,self.radius * 2)
     
     def update_size(self, new_scale_x, new_scale_y):
         self.radius = int(self.original_radius * new_scale_x)
@@ -266,20 +262,15 @@ bullets = []
 last_shot = 0
 shot_delay = 500
 
-# Цвета
 player_color = (0, 255, 0)
 ground_color = (139, 69, 19)
 
-running = True
 clock = pygame.time.Clock()
 game_speed = 1.0
 score = 0
 
 def check_collision(player_x, player_y, player_radius, obstacle, ground_height):
-    player_rect = pygame.Rect(player_x - player_radius, 
-                             player_y - player_radius, 
-                             player_radius * 2, 
-                             player_radius * 2)
+    player_rect = pygame.Rect(player_x - player_radius, player_y - player_radius, player_radius * 2, player_radius * 2)
     
     obstacle_rect = obstacle.get_rect(ground_height)
     
@@ -305,11 +296,14 @@ def resize_all(new_width, new_height):
     scale_x = screen_width / BASE_WIDTH
     scale_y = screen_height / BASE_HEIGHT
     
+
     ground_height = int(50 * scale_y)
     
+ 
     player_x = int(player_x * (scale_x / old_scale_x))
     player_y = int(player_y * (scale_y / old_scale_y))
     
+
     if player_x - player_radius < 0:
         player_x = player_radius
     if player_x + player_radius > screen_width:
@@ -319,33 +313,32 @@ def resize_all(new_width, new_height):
     if player_y + player_radius > screen_height - ground_height:
         player_y = screen_height - ground_height - player_radius
     
+
     player_radius = int(20 * scale_x)
     player_texture = pygame.transform.scale(ball_texture, (player_radius * 2, player_radius * 2))
     
-  
+
     background_day = pygame.transform.scale(background_day_image, (screen_width * 2, screen_height))
     background_night = pygame.transform.scale(background_night_image, (screen_width * 2, screen_height))
     
+
     current_is_day = (background == background_day)
     background = background_day if current_is_day else background_night
-    
     bg_x = 0
-    
-    bullet_image_scaled = pygame.transform.scale(bullet_image, 
-                                                (int(10 * scale_x), int(10 * scale_y)))
-    
+
+    bullet_image_scaled = pygame.transform.scale(bullet_image, (int(10 * scale_x), int(10 * scale_y)))
     scroll_speed = int(original_scroll_speed * scale_x)
     bg_speed = scroll_speed * 0.5
- 
+    
     for obstacle in obstacles:
         if old_scale_x > 0:
             obstacle.x = int(obstacle.x * (scale_x / old_scale_x))
         obstacle.update_size(scale_x, scale_y)
-    
     for bullet in bullets:
         bullet.x = int(bullet.x * (scale_x / old_scale_x))
         bullet.y = int(bullet.y * (scale_y / old_scale_y))
         bullet.update_size(scale_x, scale_y)
+
 while running:
     current_time = pygame.time.get_ticks()
     
@@ -385,7 +378,7 @@ while running:
                     if shoot_sound:
                         shoot_sound.play()
     
-    if is_alive:
+   if is_alive:
         keys = pygame.key.get_pressed()
         
         if keys[pygame.K_LEFT]:
@@ -402,8 +395,10 @@ while running:
                 if x_speed > 0:
                     x_speed = 0
         
+      
         player_x += x_speed
         
+  
         y_speed += gravity
         player_y += y_speed
         
@@ -441,29 +436,15 @@ while running:
         
         obstacle_type = random.choice(["spike", "block", "jump_pad", "obstacle"])
         if obstacle_type == "spike":
-            new_obstacle = Spike(new_x, 
-                                int(30 * scale_x), 
-                                int(60 * scale_y) + random.randint(0, int(40 * scale_y)),
-                                USE_IMAGES)
+            new_obstacle = Spike(new_x, int(30 * scale_x), int(60 * scale_y) + random.randint(0, int(40 * scale_y)), USE_IMAGES)
         elif obstacle_type == "block":
-            new_obstacle = Block(new_x, 
-                                int(40 * scale_x), 
-                                int(40 * scale_y),
-                                USE_IMAGES)
+            new_obstacle = Block(new_x, int(40 * scale_x), int(40 * scale_y), USE_IMAGES)
         elif obstacle_type == "jump_pad":
-            new_obstacle = JumpPad(new_x, 
-                                  int(60 * scale_x), 
-                                  int(20 * scale_y),
-                                  USE_IMAGES)
+            new_obstacle = JumpPad(new_x, int(60 * scale_x), int(20 * scale_y), USE_IMAGES)
         else:
-            new_obstacle = Obstacle(new_x, 
-                                   int(40 * scale_x) + random.randint(0, int(20 * scale_x)), 
-                                   int(40 * scale_y) + random.randint(0, int(30 * scale_y)), 
-                                   obstacle_image,
-                                   USE_IMAGES)
-        
+            new_obstacle = Obstacle(new_x, int(40 * scale_x) + random.randint(0, int(20 * scale_x)),  int(40 * scale_y) + random.randint(0, int(30 * scale_y)),  obstacle_image, USE_IMAGES)
         obstacles.append(new_obstacle)
-    
+   
     for bullet in bullets[:]:
         bullet.update()
         
@@ -492,23 +473,20 @@ while running:
                     break
     
     if not REMOVE_BACKGROUND:
-       
         screen.fill((0, 0, 0))
         screen.blit(background, (bg_x, 0))
         screen.blit(background, (bg_x + screen_width, 0))
     else:
-       
-        screen.fill((50, 50, 80)) 
+        screen.fill((50, 50, 80))
     
     pygame.draw.rect(screen, ground_color, (0, screen_height - ground_height, screen_width, ground_height))
     
     for obstacle in obstacles:
         obstacle.draw(screen, ground_height)
     
-
     for bullet in bullets:
         bullet.draw(screen)
-    
+
     if USE_IMAGES:
         texture_rect = player_texture.get_rect(center=(int(player_x), int(player_y)))
         screen.blit(player_texture, texture_rect)
@@ -518,16 +496,16 @@ while running:
     font = pygame.font.Font(None, 36)
     score_text = font.render(f"Score: {int(score)}", True, (255, 255, 255))
     screen.blit(score_text, (10, 10))
-    
+
     info_font = pygame.font.Font(None, 24)
-    image_mode = "Картинки" if USE_IMAGES else "Без картинок"
-    bg_mode = "Без фона" if REMOVE_BACKGROUND else "Фон остался"
+    image_mode = "Нет картинок" if USE_IMAGES else "Картинки"
+    bg_mode = "Картинки с фоном" if REMOVE_BACKGROUND else "Картинки с фоном"
     
     info_text1 = info_font.render(f"Press 2: {image_mode}", True, (200, 200, 200))
     info_text2 = info_font.render(f"Press 3: {bg_mode}", True, (200, 200, 200))
     screen.blit(info_text1, (10, screen_height - 50))
     screen.blit(info_text2, (10, screen_height - 25))
-    
+  
     if not is_alive:
         game_over_font = pygame.font.Font(None, 72)
         game_over_text = game_over_font.render("GAME OVER", True, (255, 0, 0))
@@ -538,7 +516,7 @@ while running:
         restart_text = restart_font.render("Нажмите R для перезапуска", True, (255, 255, 255))
         screen.blit(restart_text, (screen_width//2 - restart_text.get_width()//2, 
                                   screen_height//2 + 50))
-        
+
         keys = pygame.key.get_pressed()
         if keys[pygame.K_r]:
             is_alive = True
